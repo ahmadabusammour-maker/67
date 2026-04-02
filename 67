@@ -1,0 +1,576 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEON//67 Escape Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+
+  <main class="app-shell">
+    <header class="topbar glass">
+      <div>
+        <p class="eyebrow">MIDNIGHT PROTOCOL</p>
+        <h1>NEON//67</h1>
+      </div>
+      <div class="status-cluster">
+        <div class="status-card">
+          <span>TIME</span>
+          <strong id="timer">05:00</strong>
+        </div>
+        <div class="status-card">
+          <span>CORE</span>
+          <strong id="coreStatus">LOCKED</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero glass">
+      <div class="hero-copy">
+        <p class="eyebrow">ESCAPE ROOM // SIGNAL LOST</p>
+        <h2>Break the vault, solve the system, escape the chamber.</h2>
+        <p>
+          The room is running on a midnight-blue security grid. Find the hidden code,
+          decode the terminal, and unlock the final door before the system wipes itself.
+        </p>
+        <div class="hero-actions">
+          <button id="startBtn" class="btn primary">Boot Sequence</button>
+          <button id="resetBtn" class="btn ghost">Reset Room</button>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="mini-monitor">
+          <div class="monitor-header">
+            <span class="pulse"></span>
+            LIVE FEED
+          </div>
+          <div class="monitor-grid">
+            <div class="chip">67</div>
+            <div class="chip">NEON</div>
+            <div class="chip">VAULT</div>
+            <div class="chip">LOCK</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="game-grid">
+      <article class="panel glass">
+        <h3>Room Console</h3>
+        <div class="room-map">
+          <button class="node" data-clue="panel">Wall Panel</button>
+          <button class="node" data-clue="terminal">Terminal</button>
+          <button class="node" data-clue="drawer">Magnetic Drawer</button>
+          <button class="node" data-clue="door">Vault Door</button>
+        </div>
+        <p class="hint" id="roomHint">Power is offline. Start the boot sequence to wake the room.</p>
+      </article>
+
+      <article class="panel glass terminal-panel">
+        <h3>Encrypted Terminal</h3>
+        <div class="terminal-screen">
+          <p class="terminal-line"><span>&gt;</span> Welcome to NEON//67</p>
+          <p class="terminal-line"><span>&gt;</span> Objective: retrieve access token</p>
+          <p class="terminal-line"><span>&gt;</span> Security layer: midnight-blue cipher</p>
+        </div>
+        <div class="code-entry">
+          <input id="codeInput" type="text" placeholder="Enter 2-digit code" maxlength="2" />
+          <button id="codeBtn" class="btn primary small">Submit</button>
+        </div>
+        <p class="hint" id="codeHint">Clue one: the whole room keeps circling the same number.</p>
+      </article>
+
+      <article class="panel glass">
+        <h3>Clue Board</h3>
+        <div class="clue-board">
+          <div class="clue-card locked" id="clue1">1. WALL PANEL</div>
+          <div class="clue-card locked" id="clue2">2. TERMINAL KEY</div>
+          <div class="clue-card locked" id="clue3">3. FINAL OVERRIDE</div>
+        </div>
+        <div class="inventory">
+          <span>Inventory</span>
+          <div id="inventoryItems" class="inventory-items"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="footer-bar glass">
+      <div>
+        <span class="label">MISSION LOG</span>
+        <p id="missionLog">System online. Awaiting boot command.</p>
+      </div>
+      <div class="escape-progress">
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <span id="progressText">0% COMPLETE</span>
+      </div>
+    </section>
+  </main>
+
+  <div id="winModal" class="modal hidden">
+    <div class="modal-card glass">
+      <p class="eyebrow">ACCESS GRANTED</p>
+      <h2>You escaped the NEON//67 chamber.</h2>
+      <p>The vault door has opened. The midnight grid is safe — for now.</p>
+      <button id="playAgainBtn" class="btn primary">Play Again</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+/* styles.css */
+:root {
+  --bg: #050816;
+  --bg2: #081226;
+  --panel: rgba(9, 18, 38, 0.68);
+  --panel-2: rgba(9, 24, 52, 0.82);
+  --line: rgba(110, 180, 255, 0.18);
+  --text: #eaf2ff;
+  --muted: #96a9c8;
+  --accent: #6dd6ff;
+  --accent-2: #7c5cff;
+  --success: #37e6a6;
+  --danger: #ff6b8b;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --radius: 24px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(124, 92, 255, 0.15), transparent 35%),
+    radial-gradient(circle at 20% 20%, rgba(109, 214, 255, 0.15), transparent 26%),
+    linear-gradient(180deg, var(--bg), var(--bg2));
+  overflow-x: hidden;
+}
+
+.scanlines, .glow { position: fixed; inset: 0; pointer-events: none; }
+.scanlines {
+  opacity: 0.08;
+  background-image: linear-gradient(to bottom, rgba(255,255,255,0.7) 1px, transparent 1px);
+  background-size: 100% 4px;
+  mix-blend-mode: screen;
+}
+.glow-a, .glow-b {
+  filter: blur(80px);
+  opacity: 0.35;
+}
+.glow-a { background: radial-gradient(circle, rgba(109,214,255,0.25), transparent 55%); top: -20%; left: -10%; }
+.glow-b { background: radial-gradient(circle, rgba(124,92,255,0.22), transparent 58%); right: -10%; bottom: -20%; }
+
+.app-shell {
+  width: min(1200px, calc(100% - 32px));
+  margin: 24px auto 36px;
+  display: grid;
+  gap: 18px;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(10, 18, 36, 0.72), rgba(7, 14, 28, 0.78));
+  border: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.topbar, .hero, .footer-bar { padding: 22px; }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent);
+  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+h1, h2, h3, p { margin-top: 0; }
+h1 {
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: -0.04em;
+  margin-bottom: 0;
+}
+h2 { font-size: clamp(1.6rem, 3vw, 2.5rem); margin-bottom: 12px; }
+h3 { font-size: 1.1rem; margin-bottom: 14px; }
+p { color: var(--muted); line-height: 1.6; }
+
+.status-cluster { display: flex; gap: 12px; flex-wrap: wrap; }
+.status-card {
+  min-width: 120px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.status-card span, .label { display: block; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.14em; }
+.status-card strong { display: block; margin-top: 8px; font-size: 1.2rem; }
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
+.hero-copy, .hero-panel { min-height: 240px; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #05111f;
+  box-shadow: 0 10px 24px rgba(109, 214, 255, 0.22);
+}
+.btn.ghost, .btn.small {
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.btn.small { padding: 11px 14px; }
+
+.mini-monitor {
+  height: 100%;
+  border-radius: 22px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(5, 15, 33, 0.85), rgba(7, 22, 46, 0.9));
+  border: 1px solid rgba(109, 214, 255, 0.18);
+}
+.monitor-header {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-weight: 700; letter-spacing: 0.12em;
+}
+.pulse {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--success);
+  box-shadow: 0 0 18px var(--success);
+  animation: pulse 1.4s infinite;
+}
+.monitor-grid {
+  height: calc(100% - 42px);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-content: center;
+}
+.chip {
+  padding: 18px;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  font-family: 'JetBrains Mono', monospace;
+  color: #dfeaff;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+.panel { padding: 22px; }
+.room-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.node {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+  transition: .2s ease;
+}
+.node:hover { border-color: rgba(109,214,255,0.4); transform: translateY(-2px); }
+.hint {
+  margin-top: 16px;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  background: rgba(109,214,255,0.06);
+  border-radius: 14px;
+}
+
+.terminal-screen {
+  min-height: 180px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #04101f;
+  border: 1px solid rgba(109,214,255,0.12);
+  font-family: 'JetBrains Mono', monospace;
+}
+.terminal-line { margin: 0 0 10px; color: #cfe7ff; }
+.terminal-line span { color: var(--accent); margin-right: 8px; }
+.code-entry { display: flex; gap: 10px; margin-top: 14px; }
+.code-entry input {
+  flex: 1;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  padding: 12px 14px;
+  outline: none;
+  font-size: 1rem;
+}
+.code-entry input:focus { border-color: rgba(109,214,255,0.45); box-shadow: 0 0 0 4px rgba(109,214,255,0.08); }
+
+.clue-board { display: grid; gap: 10px; }
+.clue-card {
+  padding: 15px 16px;
+  border-radius: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.clue-card.locked { color: #7d8da8; background: rgba(255,255,255,0.03); }
+.clue-card.unlocked { color: var(--success); background: rgba(55, 230, 166, 0.08); border-color: rgba(55, 230, 166, 0.22); }
+.inventory { margin-top: 16px; }
+.inventory-items { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.item-tag {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(109,214,255,0.1);
+  border: 1px solid rgba(109,214,255,0.2);
+  color: #d8f3ff;
+  font-size: 0.9rem;
+}
+
+.footer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+.escape-progress { min-width: min(420px, 100%); }
+.progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 20px rgba(109,214,255,0.35);
+  transition: width .35s ease;
+}
+#progressText { color: var(--muted); font-weight: 700; letter-spacing: 0.08em; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 8, 18, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+}
+.modal-card {
+  width: min(560px, 100%);
+  padding: 28px;
+  text-align: center;
+}
+.hidden { display: none; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+@media (max-width: 980px) {
+  .hero, .game-grid, .footer-bar, .topbar { grid-template-columns: 1fr; display: grid; }
+  .topbar, .footer-bar { justify-content: stretch; }
+  .status-cluster { justify-content: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .app-shell { width: min(100% - 18px, 1200px); margin: 12px auto 18px; }
+  .room-map, .code-entry { grid-template-columns: 1fr; display: grid; }
+}
+
+// script.js
+const state = {
+  booted: false,
+  unlocked: { panel: false, terminal: false, drawer: false },
+  timer: 300,
+  timerId: null,
+  codeSolved: false,
+};
+
+const timerEl = document.getElementById('timer');
+const coreStatusEl = document.getElementById('coreStatus');
+const missionLogEl = document.getElementById('missionLog');
+const roomHintEl = document.getElementById('roomHint');
+const codeHintEl = document.getElementById('codeHint');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const inventoryItems = document.getElementById('inventoryItems');
+const winModal = document.getElementById('winModal');
+
+const startBtn = document.getElementById('startBtn');
+const resetBtn = document.getElementById('resetBtn');
+const playAgainBtn = document.getElementById('playAgainBtn');
+const codeBtn = document.getElementById('codeBtn');
+const codeInput = document.getElementById('codeInput');
+const nodeButtons = document.querySelectorAll('.node');
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateTimer() {
+  timerEl.textContent = formatTime(state.timer);
+  if (state.timer <= 0) {
+    clearInterval(state.timerId);
+    missionLogEl.textContent = 'SYSTEM FAILSAFE: room lock engaged.';
+    coreStatusEl.textContent = 'SEALED';
+    document.body.style.filter = 'saturate(0.85)';
+  }
+}
+
+function setProgress() {
+  const completed = Object.values(state.unlocked).filter(Boolean).length;
+  const percent = Math.round((completed / 3) * 100);
+  progressFill.style.width = `${percent}%`;
+  progressText.textContent = `${percent}% COMPLETE`;
+  if (percent === 100) {
+    coreStatusEl.textContent = 'OPEN';
+    missionLogEl.textContent = 'Final override active. Vault door unlocked.';
+    setTimeout(() => winModal.classList.remove('hidden'), 500);
+  }
+}
+
+function addInventoryItem(name) {
+  if ([...inventoryItems.children].some(el => el.textContent === name)) return;
+  const tag = document.createElement('span');
+  tag.className = 'item-tag';
+  tag.textContent = name;
+  inventoryItems.appendChild(tag);
+}
+
+function unlockClue(key, message, item) {
+  if (state.unlocked[key]) return;
+  state.unlocked[key] = true;
+  document.getElementById(`clue${Object.keys(state.unlocked).indexOf(key) + 1}`).classList.remove('locked');
+  document.getElementById(`clue${Object.keys(state.unlocked).indexOf(key) + 1}`).classList.add('unlocked');
+  addInventoryItem(item);
+  missionLogEl.textContent = message;
+  setProgress();
+}
+
+function bootSequence() {
+  if (state.booted) return;
+  state.booted = true;
+  missionLogEl.textContent = 'Boot complete. Neural locks are online.';
+  roomHintEl.textContent = 'Inspect the room. The wall panel looks suspiciously active.';
+  state.timerId = setInterval(() => {
+    state.timer -= 1;
+    updateTimer();
+    if (state.timer <= 0) clearInterval(state.timerId);
+  }, 1000);
+}
+
+function resetGame() {
+  clearInterval(state.timerId);
+  state.booted = false;
+  state.unlocked = { panel: false, terminal: false, drawer: false };
+  state.timer = 300;
+  state.codeSolved = false;
+  updateTimer();
+  coreStatusEl.textContent = 'LOCKED';
+  missionLogEl.textContent = 'System online. Awaiting boot command.';
+  roomHintEl.textContent = 'Power is offline. Start the boot sequence to wake the room.';
+  codeHintEl.textContent = 'Clue one: the whole room keeps circling the same number.';
+  progressFill.style.width = '0%';
+  progressText.textContent = '0% COMPLETE';
+  inventoryItems.innerHTML = '';
+  winModal.classList.add('hidden');
+  document.getElementById('clue1').className = 'clue-card locked';
+  document.getElementById('clue2').className = 'clue-card locked';
+  document.getElementById('clue3').className = 'clue-card locked';
+  document.body.style.filter = 'none';
+}
+
+startBtn.addEventListener('click', bootSequence);
+resetBtn.addEventListener('click', resetGame);
+playAgainBtn.addEventListener('click', resetGame);
+
+nodeButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const clue = button.dataset.clue;
+    if (!state.booted && clue !== 'door') {
+      roomHintEl.textContent = 'The room is still asleep. Boot it first.';
+      return;
+    }
+
+    if (clue === 'panel') {
+      roomHintEl.textContent = 'A hidden strip displays: “The lock speaks in two digits.”';
+      unlockClue('panel', 'Wall panel activated. First clue acquired.', 'Panel Key');
+    } else if (clue === 'terminal') {
+      roomHintEl.textContent = 'The terminal flickers with a single command prompt.';
+      unlockClue('terminal', 'Terminal decoded. A numeric pattern appears.', 'Cipher Token');
+    } else if (clue === 'drawer') {
+      roomHintEl.textContent = 'The drawer opens with a magnetic click and reveals the override chip.';
+      unlockClue('drawer', 'Drawer opened. Final override recovered.', 'Override Chip');
+    } else if (clue === 'door') {
+      if (state.codeSolved && Object.values(state.unlocked).every(Boolean)) {
+        missionLogEl.textContent = 'Door override accepted.';
+        setProgress();
+      } else {
+        roomHintEl.textContent = 'The vault door is still sealed. Finish the rest of the room first.';
+      }
+    }
+  });
+});
+
+codeBtn.addEventListener('click', () => {
+  const value = codeInput.value.trim();
+  if (value === '67') {
+    state.codeSolved = true;
+    codeHintEl.textContent = 'Correct. The system accepts the midnight key.';
+    missionLogEl.textContent = 'Access code accepted. Door protocol is now visible.';
+    unlockClue('panel', 'Wall panel activated. First clue acquired.', 'Panel Key');
+  } else {
+    codeHintEl.textContent = 'Wrong code. Hint: the room keeps shouting the same number.';
+    missionLogEl.textContent = 'Access denied. Try again.';
+  }
+});
+
+codeInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') codeBtn.click();
+});
+
+updateTimer();
+setProgress();
